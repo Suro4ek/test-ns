@@ -34,13 +34,13 @@ func (g GormDB) Create(ctx context.Context, data interface{}) error {
 	return g.db.WithContext(ctx).Create(data).Error
 }
 
-func (g GormDB) Update(ctx context.Context, data, query interface{}, args ...interface{}) error {
+func (g GormDB) Update(ctx context.Context, tableName string, data, query interface{}, args ...interface{}) error {
 	db := g.db
 	tx := extractGormTx(ctx)
 	if tx != nil {
-		db = tx.Clauses(clause.Clause{Name: "FOR UPDATE"})
+		db = tx.Clauses(clause.Locking{Strength: "UPDATE"})
 	}
-	result := db.WithContext(ctx).Where(query, args...).Updates(data)
+	result := db.WithContext(ctx).Table(tableName).Where(query, args...).Updates(data)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -59,6 +59,15 @@ func (g GormDB) BeginFind(ctx context.Context, value interface{}) repo.Find {
 
 func (g GormDB) Delete(ctx context.Context, data interface{}, condition interface{}, args ...interface{}) error {
 	return g.db.WithContext(ctx).Where(condition, args...).Delete(data).Error
+}
+
+func (f *GormFind) Clauses(clauses ...interface{}) repo.Find {
+	clausesGORM := make([]clause.Expression, len(clauses))
+	for i, c := range clauses {
+		clausesGORM[i] = c.(clause.Expression)
+	}
+	f.db = f.db.Clauses(clausesGORM...)
+	return f
 }
 
 func (g GormDB) Instance() interface{} {

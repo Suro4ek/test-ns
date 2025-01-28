@@ -63,6 +63,13 @@ func (uc updateTaskInteractor) Execute(ctx context.Context, input UpdateTaskInpu
 
 	time := time.Now()
 	task.SetUpdatedAt(&time)
+	task.SetTitle(input.Title)
+	task.SetDescription(input.Description)
+	err = task.SetStatus(input.Status)
+	if err != nil {
+		uc.transaction.Rollback(ctx)
+		return UpdateTaskOutput{}, err
+	}
 	task, err = uc.repo.Update(ctx, task)
 	if err != nil {
 		uc.transaction.Rollback(ctx)

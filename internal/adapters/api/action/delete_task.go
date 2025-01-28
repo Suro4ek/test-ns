@@ -29,6 +29,7 @@ func (a DeleteTaskAction) Execute(w http.ResponseWriter, r *http.Request) {
 	err = a.uc.Execute(r.Context(), input)
 	if err != nil {
 		response.NewError(err, http.StatusInternalServerError).Send(w)
+		return
 	}
 
 	response.NewSuccess(nil, http.StatusCreated).Send(w)

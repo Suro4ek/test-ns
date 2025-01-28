@@ -28,6 +28,7 @@ func (a UpdateTaskAction) Execute(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		response.NewError(err, http.StatusBadRequest).Send(w)
+		return
 	}
 
 	input.ID = uint32(id)
@@ -35,6 +36,7 @@ func (a UpdateTaskAction) Execute(w http.ResponseWriter, r *http.Request) {
 	output, err := a.uc.Execute(r.Context(), input)
 	if err != nil {
 		response.NewError(err, http.StatusInternalServerError).Send(w)
+		return
 	}
 
 	response.NewSuccess(output, http.StatusCreated).Send(w)

@@ -34,6 +34,7 @@ func (a GetTasksAction) Execute(w http.ResponseWriter, r *http.Request) {
 	output, err := a.uc.Execute(r.Context(), input)
 	if err != nil {
 		response.NewError(err, http.StatusInternalServerError).Send(w)
+		return
 	}
 
 	response.NewSuccess(output, http.StatusCreated).Send(w)

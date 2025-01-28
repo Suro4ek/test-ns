@@ -48,8 +48,12 @@ func (uc createTaskInteractor) Execute(ctx context.Context, input CreateTaskInpu
 	ctx, cancel := context.WithTimeout(ctx, uc.ctxTimeout)
 	defer cancel()
 
-	task := entities.NewTaskCreate(input.Title, input.Description, input.Status, time.Now())
-	task, err := uc.repo.Create(ctx, task)
+	task := entities.NewTaskCreate(input.Title, input.Description, time.Now())
+	err := task.SetStatus(input.Status)
+	if err != nil {
+		return CreateTaskOutput{}, err
+	}
+	task, err = uc.repo.Create(ctx, task)
 	if err != nil {
 		return CreateTaskOutput{}, err
 	}

@@ -115,7 +115,9 @@ func (r Router) updateTaskAction() gin.HandlerFunc {
 
 			act = action.NewUpdateTaskAction(uc)
 		)
-
+		q := ctx.Request.URL.Query()
+		q.Add("id", ctx.Param("id"))
+		ctx.Request.URL.RawQuery = q.Encode()
 		act.Execute(ctx.Writer, ctx.Request)
 	}
 }
@@ -130,7 +132,9 @@ func (r Router) deleteTaskAction() gin.HandlerFunc {
 
 			act = action.NewDeleteTaskAction(uc)
 		)
-
+		q := ctx.Request.URL.Query()
+		q.Add("id", ctx.Param("id"))
+		ctx.Request.URL.RawQuery = q.Encode()
 		act.Execute(ctx.Writer, ctx.Request)
 	}
 }

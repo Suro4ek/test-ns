@@ -4,15 +4,21 @@ import (
 	"context"
 	"test-ns/internal/entities"
 	"time"
+
+	"gorm.io/gorm/clause"
 )
 
 type taskGORM struct {
-	Id          uint32 `gorm:"primaryKey"`
+	ID          uint32 `gorm:"primaryKey;column:id"`
 	Title       string
 	Description string
 	Status      string
 	CreatedAt   time.Time
 	UpdatedAt   *time.Time `gorm:"autoUpdateTime:false"`
+}
+
+func (taskGORM) TableName() string {
+	return "task_gorms"
 }
 
 type TaskRepo struct {
@@ -26,7 +32,7 @@ func NewTaskRepo(db GSQL) TaskRepo {
 
 func (r TaskRepo) Create(ctx context.Context, task entities.Task) (entities.Task, error) {
 	t := taskGORM{
-		Id:          task.ID(),
+		ID:          task.ID(),
 		Title:       task.Title(),
 		Description: task.Description(),
 		Status:      task.Status(),
@@ -37,7 +43,7 @@ func (r TaskRepo) Create(ctx context.Context, task entities.Task) (entities.Task
 		return entities.Task{}, entities.ErrorTaskCreate
 	}
 	return entities.NewTask(
-		t.Id,
+		t.ID,
 		t.Title,
 		t.Description,
 		t.Status,
@@ -51,18 +57,17 @@ func (r TaskRepo) Update(ctx context.Context, task entities.Task) (entities.Task
 		"title":       task.Title(),
 		"description": task.Description(),
 		"status":      task.Status(),
-		"created_at":  task.CreatedAt(),
 		"updated_at":  task.UpdatedAt(),
 	}
-	if err := r.db.Update(ctx, &updates, &taskGORM{Id: task.ID()}); err != nil {
-		return entities.Task{}, entities.ErrorTaskCreate
+	if err := r.db.Update(ctx, "task_gorms", &updates, &taskGORM{ID: task.ID()}); err != nil {
+		return entities.Task{}, entities.ErrorTaskUpdate
 	}
 	return entities.NewTask(
 		task.ID(),
 		updates["title"].(string),
 		updates["description"].(string),
 		updates["status"].(string),
-		updates["created_at"].(time.Time),
+		task.CreatedAt(),
 		updates["updated_at"].(*time.Time),
 	), nil
 }
@@ -83,7 +88,7 @@ func (r TaskRepo) GetTasks(ctx context.Context, status, sort *string) ([]entitie
 }
 
 func (r TaskRepo) DeleteTask(ctx context.Context, id uint32) error {
-	if err := r.db.Delete(ctx, &taskGORM{}, &taskGORM{Id: id}); err != nil {
+	if err := r.db.Delete(ctx, &taskGORM{}, &taskGORM{ID: id}); err != nil {
 		return entities.ErrorTaskDelete
 	}
 	return nil
@@ -91,11 +96,11 @@ func (r TaskRepo) DeleteTask(ctx context.Context, id uint32) error {
 
 func (r TaskRepo) GetTask(ctx context.Context, id uint32) (entities.Task, error) {
 	var task taskGORM
-	if err := r.db.BeginFind(ctx, &taskGORM{}).Where("id = ?", id).Find(&task); err != nil {
+	if err := r.db.BeginFind(ctx, &taskGORM{}).Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", id).First(&task); err != nil {
 		return entities.Task{}, entities.ErrTaskFind
 	}
 	return entities.NewTask(
-		task.Id,
+		task.ID,
 		task.Title,
 		task.Description,
 		task.Status,
@@ -108,7 +113,7 @@ func (r TaskRepo) convertToEntities(tasks []taskGORM) []entities.Task {
 	var entitiesTasks []entities.Task
 	for _, t := range tasks {
 		entitiesTasks = append(entitiesTasks, entities.NewTask(
-			t.Id,
+			t.ID,
 			t.Title,
 			t.Description,
 			t.Status,

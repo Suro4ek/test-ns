@@ -46,12 +46,11 @@ func NewTask(id uint32, title, description, status string, createdAt time.Time, 
 }
 
 func NewTaskCreate(
-	title, desscription string, status string, createdAt time.Time,
+	title, desscription string, createdAt time.Time,
 ) Task {
 	return Task{
 		title:       title,
 		description: desscription,
-		status:      status,
 		createdAt:   createdAt,
 	}
 }
